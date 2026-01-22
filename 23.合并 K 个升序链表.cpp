@@ -47,7 +47,7 @@ public:
         // 优先队列，小顶堆 
         auto cmp = [](ListNode* a, ListNode* b) {
             return a->val > b->val;
-        };
+        };  // 优先队列的比较器，比较谁先沉底
         priority_queue<
             ListNode*,          // 元素类型
             vector<ListNode*>,  // 底层容器
