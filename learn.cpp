@@ -5,6 +5,8 @@
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
+#include <functional>
 using namespace std;
 
 void vector_learn(int n) {
@@ -139,6 +141,68 @@ void unordered_set_learn() {
     }
 }
 
+void lambda_learn() {
+    cout << "========== Lambda 算法竞赛常用 ==========" << endl;
+
+    // ========== 1. 基本语法 ==========
+    // [捕获列表](参数) { 函数体 }
+    auto add = [](int a, int b) { return a + b; };
+    cout << "add(3,5): " << add(3, 5) << endl;  // 8
+
+    // ========== 2. 自定义排序（最常用） ==========
+    vector<int> v = {3, 1, 4, 1, 5};
+    
+    // 降序排序
+    sort(v.begin(), v.end(), [](int a, int b) { return a > b; });
+    // 结果: 5 4 3 1 1
+
+    // 按绝对值排序
+    sort(v.begin(), v.end(), [](int a, int b) { return abs(a) < abs(b); });
+
+    // ========== 3. 捕获外部变量（[&] 最常用） ==========
+    vector<int> nums = {3, 1, 4, 1, 5};
+    vector<int> idx = {0, 1, 2, 3, 4};
+    
+    // 按 nums 值对索引排序
+    sort(idx.begin(), idx.end(), [&](int i, int j) {
+        return nums[i] < nums[j];
+    });  // idx -> {1, 3, 0, 2, 4}
+
+    // ========== 4. 优先队列自定义比较 ==========
+    // 小顶堆（默认是大顶堆）
+    auto cmp = [](int a, int b) { return a > b; };
+    priority_queue<int, vector<int>, decltype(cmp)> pq(cmp);
+    pq.push(5); pq.push(2); pq.push(1);
+    // pq.top() = 1（最小值）
+
+    // 按 pair.second 排序的小顶堆
+    auto cmp2 = [](pair<int,int>& a, pair<int,int>& b) { 
+        return a.second > b.second; 
+    };
+    priority_queue<pair<int,int>, vector<pair<int,int>>, decltype(cmp2)> pq2(cmp2);
+
+    // ========== 5. DFS/BFS 递归 Lambda ==========
+    vector<vector<int>> graph(10);
+    vector<bool> visited(10, false);
+    
+    function<void(int)> dfs = [&](int u) {
+        visited[u] = true;
+        for (int v : graph[u]) {
+            if (!visited[v]) dfs(v);
+        }
+    };
+    // dfs(0);  // 调用
+
+    // ========== 6. 常用 STL 算法配合 ==========
+    // 查找第一个满足条件的元素
+    auto it = find_if(v.begin(), v.end(), [](int x) { return x > 3; });
+    
+    // 统计满足条件的个数
+    int cnt = count_if(v.begin(), v.end(), [](int x) { return x > 2; });
+
+    cout << "========== 学习结束 ==========" << endl;
+}
+
 int main() {
     int n = 10;
     // vector_learn(n);  // 学习vec
@@ -151,6 +215,7 @@ int main() {
     // 特别注意一个可能出现的问题，就是当递归函数的参数中有容器数据结构时，千万别使用传值的方式，
     // 否则每次递归都会创建一个数据副本，消耗大量的内存和时间，非常容易导致超时或者超内存的错误。
 
+    lambda_learn();
     
     return 0;
 }
