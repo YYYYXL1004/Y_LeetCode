@@ -23,7 +23,7 @@ public:
     
     int sumRegion(int row1, int col1, int row2, int col2) {
         return preSum[row2+1][col2+1] - preSum[row1][col2+1] - preSum[row2+1][col1] + preSum[row1][col1];
-    }
+    } // 注意索引，下次不明白就画4*4个格子图理解，不要线图
 };
 
 /**

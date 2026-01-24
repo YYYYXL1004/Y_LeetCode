@@ -9,7 +9,7 @@
 class NumArray {
 public:
     vector<int> preSum;
-    NumArray(vector<int>& nums) {
+    NumArray(vector<int>& nums) { // 注意原数组的下标是0-base
         preSum.resize(nums.size() + 1); // preSum[0]=0, 便于计算
         for(int i = 1; i < preSum.size(); i++) {
             preSum[i] = preSum[i-1] + nums[i-1];
