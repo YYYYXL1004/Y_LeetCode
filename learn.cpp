@@ -203,6 +203,28 @@ void lambda_learn() {
     cout << "========== 学习结束 ==========" << endl;
 }
 
+void kmzhizhen(vector<int> &nums) {
+    // 数组去重模板
+    int slow = 0;
+    for(int fast = 0; fast < n; fast++) {
+        if(nums[fast] != nums[slow]) {
+            slow++;
+            nums[slow] = nums[fast];
+        }
+    }
+    
+    // 链表去重模板（对应迁移）
+    ListNode* slow = head;
+    ListNode* fast = head;
+    while(fast != nullptr) {
+        if(fast->val != slow->val) {
+            slow->next = fast;  // 对应 nums[slow] = nums[fast]
+            slow = slow->next;  // 对应 slow++
+        }
+        fast = fast->next;
+    }
+    slow->next = nullptr;  // 链表特有：断开尾部
+}
 int main() {
     int n = 10;
     // vector_learn(n);  // 学习vec
