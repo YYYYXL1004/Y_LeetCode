@@ -47,6 +47,8 @@ void list_learn() {
     lst.push_back(7);
     cout<< lst.front() <<" "<< lst.back()<<endl;  // 0 7
 
+    lst.sort();
+    lst.sort(greater<int>()); // 从大到小排序
     // lst.pop_front();
     // lst.pop_back();
     
