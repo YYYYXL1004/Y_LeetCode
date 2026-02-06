@@ -19,17 +19,32 @@
  */
 class Solution {
 public:
-    vector<int> res;
-    vector<int> preorderTraversal(TreeNode* root) {
-        traverse(root);
-        return res;
-    }
-    void traverse(TreeNode* root) {
-        if(root == nullptr)  return ;
-        res.push_back(root->val);
-        preorderTraversal(root->left);
-        preorderTraversal(root->right);
-    }
+//     vector<int> res;
+//     vector<int> preorderTraversal(TreeNode* root) {
+//         traverse(root);
+//         return res;
+//     }
+//     void traverse(TreeNode* root) {
+//         if(root == nullptr)  return ;
+//         res.push_back(root->val);
+//         preorderTraversal(root->left);
+//         preorderTraversal(root->right);
+//     }
+
+        // 解法二：分治（不常用，时间复杂度不太确定
+        vector<int> preorderTraversal(TreeNode* root) {
+            vector<int> res;
+            if(root == nullptr) return res;
+
+            res.push_back(root->val);
+            // 后面接着左子树的前序遍历结果
+            vector<int> left = preorderTraversal(root->left);
+            res.insert(res.end(), left.begin(), left.end());
+
+            vector<int> right = preorderTraversal(root->right);
+            res.insert(res.end(), right.begin(), right.end());
+            return res;
+        }
 };
 // @lc code=end
 
