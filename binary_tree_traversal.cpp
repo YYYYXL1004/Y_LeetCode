@@ -48,13 +48,13 @@ void traverse(int node, int parent) {
     // 前序位置
     preorder.push_back(values[node - 1]);
     // 递归左子树
-    if(children.size() >= 1) {
+    if(children.size() >= 1) {  // 大于等于1说明有左节点
         traverse(children[0], node);
     }
     // 中序位置
     inorder.push_back(values[node - 1]);
     // 递归右子树
-    if(children.size() >= 2) {
+    if(children.size() >= 2) { // 大于等于2说明有左节点
         traverse(children[1], node);
     }
     // 后序位置
