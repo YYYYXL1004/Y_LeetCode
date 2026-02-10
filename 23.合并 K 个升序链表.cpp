@@ -56,7 +56,7 @@ public:
 
         // 把k个链表的 头结点都加入小顶堆
         for(ListNode* head : lists) {
-            if(head!=NULL) {
+            if(head != NULL) {
                 pq.push(head);
             }
         }
