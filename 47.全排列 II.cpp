@@ -22,7 +22,7 @@ public:
         for(int i = 0; i < nums.size(); i++) {
             if(used[i]) continue;
             // 新添加的剪枝逻辑，固定相同的元素在排列中的相对位置
-            // 如果前面的相邻相等元素没有用过，则跳过剪枝
+            // 如果前面的相邻相等元素没有用过，则跳过当前元素
             if(i > 0 && nums[i] == nums[i - 1] && !used[i - 1]) continue;
 
             track.push_back(nums[i]);
