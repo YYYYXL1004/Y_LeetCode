@@ -25,10 +25,8 @@ public:
                     vaild++;
                 }
             }
-            // 判断左侧窗口是否要收缩，要在宽度为n窗口下满足条件才可以
-            while(right - left >= n) {
-                // 必须在这里判断：此时窗口大小恰好为n，且满足字符频率要求
-                if(vaild == need.size()) {
+            while(vaild == need.size()) {
+                if(right - left == n) {
                     return true;
                 }
                 char d = s2[left];
@@ -41,6 +39,22 @@ public:
                     window[d]--;
                 }
             }
+            // 判断左侧窗口是否要收缩，要在宽度为n窗口下满足条件才可以
+            // while(right - left >= n) {  // 定长滑动窗口，判断缩小窗口条件不一样
+            //     // 必须在这里判断：此时窗口大小恰好为n，且满足字符频率要求
+            //     if(vaild == need.size()) {
+            //         return true;
+            //     }
+            //     char d = s2[left];
+            //     left++;
+
+            //     if(need.count(d)) {
+            //         if(window[d] == need[d]) {
+            //             vaild--;
+            //         }
+            //         window[d]--;
+            //     }
+            // }
         }
         return false;
     }
