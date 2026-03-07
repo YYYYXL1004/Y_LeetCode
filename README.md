@@ -46,7 +46,7 @@
 | [BFS](./notes/BFS.md) | BFS框架、状态抽象、打开转盘锁、滑动谜题 |
 | [图](./notes/图.md) | 图遍历框架、DAG路径搜索、克隆图 |
 | [最短路径](./notes/最短路径.md) | Dijkstra模板、网格图变体、概率最大路径、中转限制 |
-| [天梯赛备赛](./notes/天梯赛备赛.md) | 输入输出陷阱、数据类型陷阱、常用数据结构、常见坑点 |
+| [天梯赛备赛](./notes/天梯赛/天梯赛备赛.md) | 输入输出陷阱、数据类型陷阱、常用数据结构、常见坑点 |
 
 ---
 
@@ -349,6 +349,6 @@
 
 | 数据结构 | 文件 | 状态 |
 |----------|------|------|
-| 动态数组 | [MyArrayList.cpp](./MyArrayList.cpp) | ✅ |
-| 链表 | [707.设计链表.cpp](./707.设计链表.cpp) | ✅ |
-| 二叉树遍历（邻接表） | [binary_tree_traversal.cpp](./binary_tree_traversal.cpp) | ✅ |
+| 动态数组 | [MyArrayList.cpp](./Learn/MyArrayList.cpp) | ✅ |
+| 链表 | [707.设计链表.cpp](./LeetCode/707.设计链表.cpp) | ✅ |
+| 二叉树遍历（邻接表） | [binary_tree_traversal.cpp](./Learn/binary_tree_traversal.cpp) | ✅ |
