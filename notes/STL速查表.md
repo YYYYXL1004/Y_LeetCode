@@ -259,9 +259,11 @@ pq.pop();                 // 弹出堆顶
 pq.top();                 // 堆顶元素（最大的）
 pq.size();
 pq.empty();
+pq.emplace();
 
 // 小根堆写法：
 priority_queue<int, vector<int>, greater<int>> pq;
+priority_queue<int, vector<int>, [](int x, int y) {return x > y; }> pq; 
 ```
 
 ---
