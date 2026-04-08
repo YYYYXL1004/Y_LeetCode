@@ -24,3 +24,12 @@ Count includes new entries from these folders when they are included in summary/
 - Learn/
 
 This includes representative template entries (for example algorithm templates in Learn/) if they are added to daily log and README classification.
+
+## Problem Summary Default Rules
+
+When the user provides a problem statement and solution code and asks to "汇总" or "按这个格式整理", always follow the workflow in [.cursor/skills/problem-summary/SKILL.md](.cursor/skills/problem-summary/SKILL.md).
+
+Output format in target cpp file must be:
+1. Problem statement block comment at top.
+2. Runnable solution code in the middle.
+3. A concise `【总结】` section at bottom (model, correctness intuition, complexity, pitfalls).
