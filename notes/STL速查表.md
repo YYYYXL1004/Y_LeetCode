@@ -131,6 +131,36 @@ if (isDelim(s[pos - 1]) && isDelim(s[pos + len])) {
 
 ## 二、vector
 
+### 0. 初始化
+```cpp
+// 一维
+vector<int> dx = {-1, 1, 0, 0};
+vector<int> dy{-1, 1, 0, 0};
+vector<int> a(n, 1); // 长度为 n，初值全是 1
+
+// 二维
+vector<vector<int>> dirs = {
+    {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+}; // 上下左右方向数组
+
+int dirs[][2] = {
+    {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+}; // 与上面等价，注意二维原生数组从第二维开始必须写死。
+
+vector<vector<int>> grid(n, vector<int>(m, 0));
+grid.assign(n, vector<int>(m, 0));  // 初始化后重新分配
+grid.resize(new_size, vector<int>(m, 0)); // 扩容并初始化新元素
+
+// 在图和树中常用来存储 邻接表（需要明确告诉最多有多少个节点）
+vector<int> mp[MAXN]; // 这是向量数组，MAXN个vector<int>
+for(int i = 1; i <= N; i++) {
+    mp[i].clear(); //清空
+}
+mp[i].clear();
+// 这是大小未知，行数可能会增加的矩阵
+vector<vector<int>> mp(MAXN); // 这是嵌套向量，纯正二维动态数组
+```
+
 ### 1. 访问
 ```cpp
 a[i]                  // 下标访问
