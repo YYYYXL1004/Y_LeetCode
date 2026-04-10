@@ -83,7 +83,7 @@ const int MAXN = 100005; // ID最大99999
 vector<int> mp[MAXN];
 unordered_map<int, char> fmp;
 
-void dfs(int u, int p, int d, vector<int>& fa) { // 记录u的4辈
+void dfs(int u, int p, int d, vector<int>& fa) { // 记录u的4辈，注意要引用传参
 	if(d >= 4) return ; // d等于0时就计算父母这一辈了， 所以d=4时就可以退出啦
 	for(int v : mp[u]) {
 		if(v != p) {
