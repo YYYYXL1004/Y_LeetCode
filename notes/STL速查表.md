@@ -273,6 +273,68 @@ s.upper_bound(5);         // 第一个>5的迭代器
 | 查找复杂度 | O(log n) | O(1) 平均 |
 | 能 lower_bound | ✅ | ❌ |
 
+### 6. 求交集与并集
+```cpp
+set<int> a = {1, 2, 3, 5};
+set<int> b = {2, 3, 4, 6};
+
+set<int> inters, uni;
+
+// 交集：同时在 a 和 b 中出现
+set_intersection(a.begin(), a.end(),
+                 b.begin(), b.end(),
+                 inserter(inters, inters.begin()));
+
+// 并集：在 a 或 b 中出现（set 自动去重）
+set_union(a.begin(), a.end(),
+          b.begin(), b.end(),
+          inserter(uni, uni.begin()));
+```
+
+```cpp
+// 如果你更习惯用 vector 存结果：
+vector<int> inters2, uni2;
+set_intersection(a.begin(), a.end(), b.begin(), b.end(), back_inserter(inters2));
+set_union(a.begin(), a.end(), b.begin(), b.end(), back_inserter(uni2));
+```
+
+- 前提：输入区间必须有序；`set` 天然有序可直接用。
+- 头文件：`#include <algorithm>`，用 `inserter/back_inserter` 时还要 `#include <iterator>`。
+- `unordered_set` 无序，不能直接用 `set_intersection/set_union`（除非先拷贝到 `vector` 并排序）。
+
+### 7. 求差集与对称差集
+```cpp
+set<int> a = {1, 2, 3, 5};
+set<int> b = {2, 3, 4, 6};
+
+set<int> diff_ab, diff_ba, sym;
+
+// 差集 A - B：在 a 中但不在 b 中
+set_difference(a.begin(), a.end(),
+               b.begin(), b.end(),
+               inserter(diff_ab, diff_ab.begin()));
+
+// 差集 B - A：在 b 中但不在 a 中
+set_difference(b.begin(), b.end(),
+               a.begin(), a.end(),
+               inserter(diff_ba, diff_ba.begin()));
+
+// 对称差集：(A - B) ∪ (B - A)
+set_symmetric_difference(a.begin(), a.end(),
+                         b.begin(), b.end(),
+                         inserter(sym, sym.begin()));
+```
+
+```cpp
+// 如果你更习惯用 vector 存结果：
+vector<int> diff_ab2, sym2;
+set_difference(a.begin(), a.end(), b.begin(), b.end(), back_inserter(diff_ab2));
+set_symmetric_difference(a.begin(), a.end(), b.begin(), b.end(), back_inserter(sym2));
+```
+
+- 差集有方向：`A - B` 和 `B - A` 一般不同。
+- 对称差集就是“只出现在其中一个集合中的元素”。
+
 ---
 
 ## 五、map / unordered_map（映射）
