@@ -44,104 +44,74 @@ Dijkstra 变形题，需要同时维护：
 时间复杂度：O(E log V)
 */
 
-#include <bits/stdc++.h>
+#include<bits/stdc++.h>
 using namespace std;
+using pii = pair<int, int>;
 
-int n, m, s, d;
-vector<int> distTo;       // 最短距离
-vector<int> cntTo;        // 最短路径条数
-vector<int> teamsTo;      // 最多救援队数
-vector<int> pre;          // 前驱节点
-vector<int> res;          // 最终路径
-vector<vector<pair<int, int>>> graph;  // graph[from] -> {to, weight}
-unordered_map<int, int> mp;            // city -> 救援队数量
+const int inf = 0x3f3f3f3f;
+// typedef pair<int, int> pii;
 
-struct State {
-    int node;
-    int distFromStart;
-    State(int node, int distFromStart) : node(node), distFromStart(distFromStart) {}
+int n,m,s,ed;
+vector<int> dist;   // 记录从起点 s 到每个点的最短距离
+vector<int> paths;   // 记录从起点 s 到每个点的最短路线有几条
+vector<int> total;  // 记录走这条最短路，最多能集结多少支救援队
+vector<int> vpre;   // 记录当前节点的前驱节点是谁。（为了最后顺藤摸瓜找回路线）
+vector<int> team;
+vector<vector<pii> >adj;
 
-    bool operator<(const State& other) const {
-        return distFromStart > other.distFromStart; // 最小堆
-    }
-};
-
-void dijkstra() {
-    distTo.assign(n, INT_MAX);
-    cntTo.assign(n, 0);
-    teamsTo.assign(n, 0);
-    pre.assign(n, -1);
-
-    priority_queue<State> pq;
-    pq.emplace(s, 0);
-    distTo[s] = 0;
-    cntTo[s] = 1;
-    teamsTo[s] = mp[s];
-
-    while (!pq.empty()) {
-        State cur = pq.top();
-        pq.pop();
-        int curNode = cur.node;
-        int curDistFromStart = cur.distFromStart;
-
-        if (distTo[curNode] < curDistFromStart) continue;
-
-        for (auto& neighbor : graph[curNode]) {
-            int nextNode = neighbor.first;
-            int weight = neighbor.second;
-            int nextDistFromStart = curDistFromStart + weight;
-            int nextTeams = teamsTo[curNode] + mp[nextNode];
-
-            // 发现更短路径
-            if (nextDistFromStart < distTo[nextNode]) {
-                distTo[nextNode] = nextDistFromStart;
-                cntTo[nextNode] = cntTo[curNode];
-                teamsTo[nextNode] = nextTeams;
-                pre[nextNode] = curNode;
-                pq.emplace(nextNode, nextDistFromStart);
-            }
-            // 发现等长路径
-            else if (nextDistFromStart == distTo[nextNode]) {
-                cntTo[nextNode] += cntTo[curNode];
-                if (nextTeams > teamsTo[nextNode]) {
-                    teamsTo[nextNode] = nextTeams;
-                    pre[nextNode] = curNode;
+void dijkstra()
+{
+    dist[s] = 0; paths[s] = 1;
+    total[s] = team[s];
+    // pair默认比较first， 所以距离最小的先出来
+    priority_queue<pii, vector<pii>, greater<pii> > pq;
+    pq.push({0, s});
+    while(!pq.empty()) {
+        auto cur = pq.top();  pq.pop();
+        int d = cur.first, u = cur.second;
+        if(d > dist[u]) continue;
+        for(auto& edge: adj[u]) {
+            int v = edge.first, w = edge.second;
+            if(dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
+                paths[v] = paths[u];
+                total[v] = total[u] + team[v];
+                vpre[v] = u;
+                pq.push({dist[v], v});
+            } else if(dist[u] + w == dist[v]) {
+                paths[v] += paths[u];
+                if(total[u] + team[v] > total[v]) {
+                    total[v] = total[u] + team[v];
+                    vpre[v] = u;
                 }
             }
         }
     }
-
-    // 重建路径
-    for (int x = d; x != -1; x = pre[x]) {
-        res.push_back(x);
+    cout<<paths[ed]<<" "<<total[ed]<<"\n";
+    stack<int> path;
+    for(int i = ed; i != -1; i = vpre[i]) {
+        path.push(i);  // 倒序还原路径
     }
-    reverse(res.begin(), res.end());
+    cout<<path.top();  path.pop();
+    while(!path.empty()) {
+        cout<<" "<<path.top();
+        path.pop();
+    }
 }
 
-int main() {
-    cin >> n >> m >> s >> d;
-
-    graph.resize(n);
-
-    for (int i = 0; i < n; i++) {
-        cin >> mp[i];
-    }
-
-    for (int i = 0; i < m; i++) {
-        int from, to, w;
-        cin >> from >> to >> w;
-        graph[from].emplace_back(to, w);
-        graph[to].emplace_back(from, w);  // 无向图
-    }
-
-    dijkstra();
-
-    cout << cntTo[d] << " " << teamsTo[d] << "\n";
-    for (int i = 0; i < res.size(); i++) {
-        cout << res[i];
-        if (i < res.size() - 1) cout << " ";
-    }
-    cout << "\n";
-
-    return 0;
+int main()
+{
+	cin>>n>>m>>s>>ed;
+	team.resize(n+1);   dist.assign(n+1,inf);
+	adj.resize(n+1);    paths.assign(n+1,0);
+	total.assign(n+1,0);  vpre.assign(n+1,-1);
+	for(int i=0;i<n;i++)  cin>>team[i];
+	for(int i=0;i<m;i++) {
+		int u,v,w;
+		cin>>u>>v>>w;
+        adj[u].emplace_back(v, w);
+        adj[v].emplace_back(u, w);
+	}
+	dijkstra();
+	return 0;
 }
