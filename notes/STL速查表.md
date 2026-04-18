@@ -11,7 +11,7 @@ size_t pos = s.find("abc", 2);     // 从下标2开始查找
 size_t pos = s.find('a');          // 查找字符
 // 返回值：找到返回下标，找不到返回 string::npos
 
-if (s.find("x") != string::npos) { 找到了 }
+if (s.find("x") != s.npos) { 找到了 }
 // ⚠️ 错误：if (s.find("x") < 0)  因为 size_t 永远 >= 0
 ```
 
