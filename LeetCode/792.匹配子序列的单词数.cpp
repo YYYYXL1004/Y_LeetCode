@@ -63,7 +63,7 @@ public:
                 auto it = upper_bound(p.begin(), p.end(), cur_idx);
 
                 if(it == p.end()) {
-                    is_sub = false;  // 找不到，说明相对顺序段了，或者这个字符压根没在s出现过
+                    is_sub = false;  // 找不到，说明相对顺序断了，或者这个字符压根没在s出现过
                     break;
                 }
                 // 更新当前匹配到为止，准备匹配下一个
