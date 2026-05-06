@@ -30,12 +30,11 @@ public:
 
         // 方法二：一维优化
         // dp[j] 表示凑出总金额j的组合数
-        vector<unsigned int> dp(amount+1, 0);
-        dp[0] = 1;
+        vector<unsigned long long> dp(amount+1, 0);
+        dp[0] = 1;  // 啥也不用 总金额为0
         for(int i = 0; i < coins.size(); i++) {
-            int coin = coins[i];
-            for(int j = coin; j <= amount; j++) {
-                dp[j] += dp[j - coin];
+            for(int j = coins[i]; j <= amount; j++) {
+                dp[j] += dp[j - coins[i]];
             }
         }
         return dp[amount];
