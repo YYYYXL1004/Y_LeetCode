@@ -235,6 +235,8 @@ upper_bound(a.begin(), a.end(), 5);          // 返回第一个>5的迭代器
 
 ## 四、set / unordered_set（集合）
 
+> 进阶用法（floor/ceiling、双set、multiset、自定义比较器等）见 [set进阶](set进阶.md)
+
 ### 1. 插入与删除
 ```cpp
 set<int> s;
