@@ -53,6 +53,66 @@ s.length() / s.size()      // 长度
 s.empty()                  // 是否为空
 s.clear()                  // 清空
 s += "abc"                 // 末尾追加
+s[i]                       // 下标访问
+s.front() / s.back()       // 首尾字符
+```
+
+### 7. 字符判断与转换（<cctype>）
+```cpp
+tolower(c)           // 转小写（返回int，需要强转char）
+toupper(c)           // 转大写
+isalpha(c)           // 是否字母 a-z/A-Z
+isdigit(c)           // 是否数字 0-9
+isalnum(c)           // 是否字母或数字
+isupper(c) / islower(c)  // 是否大写/小写
+
+// 全串转小写
+for(char& c : s) c = tolower(c);
+
+// 全串转大写
+for(char& c : s) c = toupper(c);
+```
+
+### 8. 字符串与数值转换
+```cpp
+int n = stoi("123");              // string → int
+long long x = stoll("12345678");  // string → long long
+double d = stod("3.14");          // string → double
+string s = to_string(123);        // int/long long/double → string
+```
+
+### 9. 字符串流 stringstream（<sstream>）
+```cpp
+// 按分隔符拆分字符串
+stringstream ss("hello world foo bar");
+string word;
+while(ss >> word) {
+    cout << word << "\n";  // 依次输出 hello, world, foo, bar
+}
+
+// 其他类型转字符串
+stringstream ss2;
+ss2 << 123 << " " << 4.56;
+string s = ss2.str();  // s = "123 4.56"
+
+// 用 getline 按自定义分隔符拆分
+string line = "a,b,c,d";
+stringstream ss3(line);
+string token;
+while(getline(ss3, token, ',')) {
+    cout << token << "\n";  // 依次输出 a, b, c, d
+}
+```
+
+### 10. getline 读取整行
+```cpp
+// cin >> s 遇到空格就停，getline 读整行（含空格）
+getline(cin, s);
+
+// ⚠️ cin >> n 后接 getline 必须先吃换行！
+cin >> n;
+cin.ignore();
+getline(cin, s);
 ```
 
 ### 7. 字符串替换专题：把 s1 换成 s2
