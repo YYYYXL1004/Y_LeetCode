@@ -135,111 +135,102 @@ int main() {
 第二种解法（注释保留，不参与编译）：模 998244353 高斯消元
 核心思想：所有运算在模 998244353 的整数域上进行，用乘逆元代替除法，彻底规避浮点精度问题。
 
-#include <bits/stdc++.h>
+#include<bits/stdc++.h>
 using namespace std;
+#define debug(x) cout<<#x<<" "<<x<<"\n"
+const int MOD = 998244353;
 
-const int MOD = 998244353;  // 大质数，保证模域运算合法
-
-// 快速幂：计算 a^b % MOD，时间复杂度 O(log b)
+// 快速幂：计算 a^b % MOD，O(log b)
 long long qpow(long long a, long long b) {
 	long long res = 1;
 	a %= MOD;
-	while (b > 0) {
-		if (b & 1) res = res * a % MOD;  // 当前二进制位是 1 → 乘入结果
-		a = a * a % MOD;                  // 底数翻倍
-		b >>= 1;                          // 指数右移（看下一位）
+	while(b > 0) {
+		if(b & 1) res = res * a % MOD;
+		a = a * a % MOD;
+		b >>= 1;
 	}
 	return res;
 }
 
-// 费马小定理求逆元：当 p 是质数时，a^(p-2) 就是 a 的逆元（即 1/a）
-// 前提：a 不是 MOD 的倍数（本题中原子数远小于 MOD，满足）
+// 费马小定理求逆元：a^(p-2) 就是 a 在模 p 下的倒数
 long long inv(long long a) {
-	return qpow(a, MOD - 2);
-}
-
-void solve() {
-	int m;
-	cin >> m;
-	map<string, int> elem_id;                            // 元素名 → 行号
-	vector<vector<long long>> A(40, vector<long long>(m, 0)); // 系数矩阵（最多 40 种元素）
-	int num_elem = 0;                                    // 当前已见元素种类数
-
-	// 解析化学式，构建系数矩阵
-	for (int i = 0; i < m; i++) {
-		string s;
-		cin >> s;
-		int j = 0;
-		while (j < s.length()) {
-			// 连续字母 = 元素名
-			string elem = "";
-			while (j < s.length() && isalpha(s[j])) {
-				elem += s[j];
-				j++;
-			}
-			// 连续数字 = 原子个数
-			long long cnt = 0;
-			while (j < s.length() && isdigit(s[j])) {
-				cnt = cnt * 10 + (s[j] - '0');
-				j++;
-			}
-			// 新元素分配行号
-			if (elem_id.find(elem) == elem_id.end()) {
-				elem_id[elem] = num_elem++;
-			}
-			// 填入矩阵：第 elem 行、第 i 列（第 i 种物质）
-			A[elem_id[elem]][i] = (A[elem_id[elem]][i] + cnt) % MOD;
-		}
-	}
-
-	// 高斯消元求秩（模意义下，用乘逆元代替除法）
-	int rank = 0;
-	int row = 0;                                         // 当前主元行
-	for (int col = 0; col < m && row < num_elem; col++) {
-		// ① 选主元：从第 row 行往下找第一个 A[i][col] != 0 的行
-		int pivot = row;
-		for (int i = row; i < num_elem; i++) {
-			if (A[i][col] != 0) {                        // 模意义下直接 != 0，不需要 EPS
-				pivot = i;
-				break;
-			}
-		}
-		if (A[pivot][col] == 0) continue;                // 整列全零 → 跳过这列
-
-		// ② 换行：把主元行换到第 row 行
-		swap(A[row], A[pivot]);
-
-		// ③ 算主元的逆元（代替浮点除法中的 1/mp[x][y]）
-		long long inv_p = inv(A[row][col]);
-
-		// ④ 消元：用主元行把下面所有行的第 col 列消成 0
-		for (int i = row + 1; i < num_elem; i++) {
-			if (A[i][col] != 0) {
-				// f = 被消元值 / 主元值 = 被消元值 × 主元的逆元
-				long long f = A[i][col] * inv_p % MOD;
-				for (int j = col; j < m; j++) {
-					A[i][j] = (A[i][j] - f * A[row][j]) % MOD;
-					if (A[i][j] < 0) A[i][j] += MOD;     // C++ 负数取模结果为负，修正到 [0, MOD)
-				}
-			}
-		}
-		row++;
-		rank++;                                           // 找到一个主元 → 秩 +1
-	}
-
-	// 判断：秩 < 物质数 → 有非零解 → 可配平
-	if (rank < m) cout << "Y\n";
-	else cout << "N\n";
+	return qpow(a, MOD-2);
 }
 
 int main() {
-	ios_base::sync_with_stdio(false);
-	cin.tie(NULL);
-	int t;
-	if (cin >> t) {
-		while (t--) {
-			solve();
+	ios::sync_with_stdio(false);
+	cin.tie(0);
+	int n;  cin>>n;
+	while(n--) {
+		int m;  cin>>m;
+		set<string> st;                              // 收集所有元素名（自动去重+排序）
+		vector<unordered_map<string, int>> v(m);     // v[i] = 第 i 种物质的 {元素→原子数}
+		for(int i = 0; i < m; i++) {
+			string s;  cin>>s;
+			// 解析化学式：连续字母=元素名，连续数字=原子个数
+			string s1 = "", s2 = "";
+			for(int j = 0; j < s.length(); j++) {
+				if(s[j] >= 'a' && s[j] <= 'z') {
+					s1 += s[j];
+				} else {
+					s2 += s[j];
+					if(j != s.length() && s[j+1] >= '0' && s[j+1] <= '9') {
+						s2 += s[j+1];
+						j++;
+					}
+					v[i].insert({s1, stoi(s2)});
+					st.insert(s1);
+					s1 = "", s2 = "";
+				}
+			}
 		}
+		int len = st.size();
+		if(len < m) {
+			cout<<"Y"<<"\n";
+			continue;
+		}
+		// 构建系数矩阵：行=元素，列=物质
+		vector<vector<long long>> mp(len, vector<long long>(m, 0));
+		auto it = st.begin();
+		for(int i = 0; i < len; i++) {
+			string s = *it;
+			for(int j = 0; j < m; j++) {
+				if(v[j].count(s)) {
+					mp[i][j] = v[j][s] % MOD;     // 直接存模意义下的值
+				}
+			}
+			it++;
+		}
+		// 高斯消元求秩（模意义下，用乘逆元代替除法）
+		int ans = 0, row = 0;
+		for(int col = 0; col < m && row < len; col++) {
+			// ① 选主元：从第 row 行往下找第一个非零行
+			int pivot = row;
+			for(int i = row; i < len; i++) {
+				if(mp[i][col] != 0) {               // 模意义下直接 != 0，不需要 EPS
+					pivot = i;
+					break;
+				}
+			}
+			if(mp[pivot][col] == 0) continue;        // 整列全零 → 跳过
+			// ② 换行
+			swap(mp[row], mp[pivot]);
+			// ③ 算主元的逆元（代替浮点除法中的 1/mp[x][y]）
+			long long inv_p = inv(mp[row][col]);
+			// ④ 消元：用主元行把下面所有行的第 col 列消成 0
+			for(int i = row+1; i < len; i++) {
+				if(mp[i][col] != 0) {
+					long long f = mp[i][col] * inv_p % MOD;
+					for(int j = col; j < m; j++) {
+						mp[i][j] = (mp[i][j] - f * mp[row][j]) % MOD;
+						if(mp[i][j] < 0) mp[i][j] += MOD;  // C++ 负数取模修正
+					}
+				}
+			}
+			ans++;  row++;
+		}
+		if(ans < m) cout<<"Y"<<"\n";
+		else cout<<"N"<<"\n";
 	}
 	return 0;
 }

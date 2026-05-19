@@ -150,7 +150,40 @@ if (len > need) {
 
 ---
 
-## 5. 自定义比较器：让 set 按你的方式排序
+## 5. mutable：通过 const 迭代器修改非键字段
+
+set 的迭代器是 const 的（因为修改键会破坏有序性），但有时你需要修改"附加数据"而不碰键。`mutable` 就是为此设计的。
+
+```cpp
+struct drop {
+    int x;            // 键：决定排序，不可变
+    mutable int w;    // 非键：mutable 允许通过 const 迭代器修改
+    bool operator<(const drop& other) const { return x < other.x; }
+};
+
+set<drop> s;
+s.insert({10, 2});
+auto it = s.find({10, 0});  // 按 x 查找，w 值无所谓
+it->w++;                     // 合法！mutable 允许修改
+```
+
+**为什么需要 mutable？**
+- 普通 set 迭代器解引用得到的是 `const T&`，直接修改成员会编译报错
+- `mutable` 标记的成员绕过 const 检查，但仍保证键（排序依据）不被篡改
+- 比"删除再插入"更高效且不会使迭代器失效
+
+**适用场景：** 键是位置/编号等不变量，附加数据是计数/权重等需要频繁更新的值。
+
+**实战：CSP202403D 水滴爆炸** — set 按位置排序，重量 `w` 用 mutable 实现原地 `it->w++`，达到阈值后触发链式反应。配合 priority_queue 维护待爆炸位置，`prev(it)` / `next(it)` 找邻居。
+
+**注意：**
+- `mutable` 只能用于非键字段，改键会导致 set 内部结构损坏
+- `find({key, 0})` 中附加值填什么都行，只比较键
+- 与"删除再插入"的区别：mutable 原地修改，迭代器不失效；删除再插入是 O(log n) 且会使旧迭代器失效
+
+---
+
+## 6. 自定义比较器：让 set 按你的方式排序
 
 ```cpp
 // 写法一：lambda（推荐，灵活）
@@ -175,7 +208,7 @@ set<State> s;
 
 ---
 
-## 6. set 去重 + 排序 + 压缩：一行替代 sort+unique
+## 7. set 去重 + 排序 + 压缩：一行替代 sort+unique
 
 ```cpp
 // 传统做法：sort + unique + erase
@@ -201,7 +234,7 @@ int idx = lower_bound(sorted.begin(), sorted.end(), val) - sorted.begin();
 
 ---
 
-## 7. 有序集合 + 动态第 K 大
+## 8. 有序集合 + 动态第 K 大
 
 `set` 本身不支持按秩查找（找第 K 个），但可以用以下方式：
 
@@ -232,7 +265,7 @@ os.order_of_key(7);     // 严格小于 7 的元素个数
 
 ---
 
-## 8. 遍历删除的正确姿势
+## 9. 遍历删除的正确姿势
 
 ```cpp
 // 错误：迭代器失效
@@ -263,6 +296,7 @@ std::erase_if(s, [](int x) { return x % 2 == 0; });
 | 动态找 floor/ceiling | `set` + `lower_bound` |
 | 滑动窗口最值/中位数 | `multiset` |
 | 内存分配/区间合并 | 双 `set`（按大小+按地址） |
+| 键不可变、附加值需频繁修改 | `set` + `mutable` |
 | 自定义排序的有序容器 | `set<T, decltype(cmp)>` |
 | 只需要去重不需要排序 | `unordered_set`（O(1) 更快） |
 | 需要重复元素 | `multiset` |
@@ -276,6 +310,7 @@ std::erase_if(s, [](int x) { return x % 2 == 0; });
 |------|---------|
 | floor/ceiling 查询 | LeetCode 220 存在重复元素 III |
 | 双 set 内存分配 | CSP202603C |
+| mutable 原地修改附加值 | CSP202403D 水滴爆炸 |
 | multiset 滑动窗口中位数 | LeetCode 480 |
 | 自定义比较器 set | 天梯赛 L3-043 门诊预约排队 |
 | set 去重排序 | 天梯赛 L2-005、L2-024 |
