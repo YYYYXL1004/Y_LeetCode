@@ -211,15 +211,20 @@ void _union(int p, int q) {
 ```
 
 ### 变式二：带权并查集
+// 场景：已知若干"相对关系"，推导未知关系或判断矛盾
+//   - 食物链：A吃B、B吃C → A和C什么关系？（权值 mod 3）
+//   - 判断谎话：甲说乙是好人，乙说甲是坏人 → 谁在说谎？
+//   - 带距离的连通：A到B距离3，B到C距离5 → A到C距离8？
+// 本质：权值 = 两节点之间的"偏移量"，合并时通过方程推导根节点的新权值
 ```cpp
 // 权值 d[x] = x 到 parent[x] 的距离/偏移量，find 时路径压缩同步更新
 int parent[MAXN];
 ll d[MAXN];  // 权值
 int find(int x) {
     if (parent[x] == x) return x;
-    int root = find(parent[x]);
-    d[x] += d[parent[x]];  // 路径压缩时累加权值：x→root = x→parent + parent→root
-    parent[x] = root;
+    int root = find(parent[x]); // 先递归：让 parent[x] 直接指向 root，同时 d[parent[x]] 已被刷新
+    d[x] += d[parent[x]];   // 路径压缩时累加权值：x→root = x→parent + parent→root
+    parent[x] = root;       // 路径压缩
     return root;
 }
 void _union(int p, int q, ll w) {  // p 到 q 的权值为 w
@@ -233,16 +238,32 @@ void _union(int p, int q, ll w) {  // p 到 q 的权值为 w
 ```
 
 ### 变式三：扩展域（种类并查集）
+// 场景：多种关系（同类/敌人/天敌）并存，"敌人的敌人是朋友"
+// 比带权并查集更直观：不用推公式，直接把关系拆成不同域合并
+// 食物链问题用扩展域或带权都能做，扩展域更好理解
 ```cpp
-// 把每个点 x 拆成多个域：如 x 表示同类，x+n 表示敌人
-// 常见：食物链问题（A吃B吃C），拆成 3 个域：x, x+n, x+2n
+// 把每个点 x 拆成多个域：如 x 表示同类，x+n 表示敌人，x+2n 表示天敌
 int parent[MAXN * 3];  // 开 3 倍空间
-// x+n 和 y 合并 → x 的敌人是 y 的同类
-// x 和 y+2n 合并 → x 的同类是 y 的天敌
-// 具体看题意，"敌人的敌人是朋友"时扩展域比带权更直观
+// 输入"A 和 B 是同类" → 合并 x 与 y，合并 x+n 与 y+n，合并 x+2n 与 y+2n
+// 输入"A 吃 B" → 合并 x 与 y+2n，合并 x+n 与 y，合并 x+2n 与 y+n
+// 判断矛盾：x 和 y 已在同一集合 → 说明和已知关系矛盾
 ```
 
----
+### 变式四：并查集 + map 记敌人（敌人的敌人不一定是朋友）
+```cpp
+// 场景：朋友关系用并查集维护，敌人关系用 map+set 单独记（如 L2-010 排座位）
+// 适用于"敌人的敌人不一定是朋友"，不需要扩展域
+int parent[MAXN];
+map<int, set<int>> enemy;  // enemy[x] = x 的所有敌人
+int find(int x) { return parent[x] == x ? x : parent[x] = find(parent[x]); }
+void _union(int p, int q) { int rp = find(p), rq = find(q); if (rp != rq) parent[rq] = rp; }
+// 输入"p 和 q 是朋友" → _union(p, q)
+// 输入"p 和 q 是敌人" → enemy[p].insert(q); enemy[q].insert(p);
+// 查询 p 和 q 的关系：
+//   find(p)==find(q) → 朋友
+//   enemy[find(p)].count(find(q)) → 敌人
+//   否则 → 不确定
+```
 
 ## 四、最短路径
 
@@ -257,10 +278,11 @@ vector<ll> dijkstra(vector<vector<pair<int,int>>>& g, int src) {
     priority_queue<pair<ll,int>, vector<pair<ll,int>>, greater<>> pq;
     dist[src] = 0; pq.push({0, src});
     while (!pq.empty()) {
-        auto [d, u] = pq.top(); pq.pop();
+        ll d = pq.top().first; int u = pq.top().second; pq.pop();
         // 同一个节点可能被多次 push（不同距离），弹出的是过时记录，跳过
         if (d > dist[u]) continue;  // 剪枝：必须写！否则同一节点重复扩展导致 TLE
-        for (auto& [v, w] : g[u]) {
+        for (auto& e : g[u]) {
+            int v = e.first, w = e.second;
             if (dist[v] > d + w) {   // 松弛：发现更短路径
                 dist[v] = d + w;
                 pq.push({dist[v], v});  // 新距离入堆（旧的不删，靠上面的 continue 跳过）
@@ -302,7 +324,7 @@ int bfs(vector<vector<char>>& grid, int sx, int sy) {
     while (!q.empty()) {
         int sz = q.size();     // 当前层的节点数
         while (sz--) {         // 逐层扩展，保证 step 就是最短步数
-            auto [x, y] = q.front(); q.pop();
+            int x = q.front().first, y = q.front().second; q.pop();
             if (到达终点) return step;
             for (int d = 0; d < 4; d++) {
                 int nx = x + dx[d], ny = y + dy[d];
@@ -335,8 +357,8 @@ void dfs(int x, int y, int k) {
     memo[x][y] = k;               // 刷新最优状态，标记此状态已访问
     标记/统计当前格子;
     if (k > 0) {
-        for (auto [dx, dy] : directions)
-            dfs(x + dx, y + dy, k - 1);
+        for (auto& dir : directions)
+            dfs(x + dir.first, y + dir.second, k - 1);
     }
 }
 ```
@@ -545,8 +567,8 @@ int maxDist, farNode;
 
 void dfs(int u, int p, int d) {
     if (d > maxDist) { maxDist = d; farNode = u; }  // 记录最远节点
-    for (auto& [v, w] : g[u])
-        if (v != p) dfs(v, u, d + w);  // 不走回头路
+    for (auto& e : g[u])
+        if (e.first != p) dfs(e.first, u, d + e.second);  // 不走回头路
 }
 
 int diameter() {
