@@ -3,3 +3,5 @@
 .vscode/
 .superpowers
 .claude
+*.pdf
+*.css

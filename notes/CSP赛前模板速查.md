@@ -270,12 +270,12 @@ void _union(int p, int q) { int rp = find(p), rq = find(q); if (rp != rq) parent
 ### Dijkstra（堆优化，邻接表）
 ```cpp
 // graph[u] = {{v, w}, ...}  适用于非负权图（不能有负权边！）
-// greater<> 让 priority_queue 变成小根堆（距离小的先出）
+// greater<pair<ll,int>> 让 priority_queue 变成小根堆（距离小的先出）
 // 时间复杂度 O((V+E) log V)
 vector<ll> dijkstra(vector<vector<pair<int,int>>>& g, int src) {
     int n = g.size();
     vector<ll> dist(n, LLONG_MAX);
-    priority_queue<pair<ll,int>, vector<pair<ll,int>>, greater<>> pq;
+    priority_queue<pair<ll,int>, vector<pair<ll,int>>, greater<pair<ll,int>>> pq;
     dist[src] = 0; pq.push({0, src});
     while (!pq.empty()) {
         ll d = pq.top().first; int u = pq.top().second; pq.pop();
@@ -338,6 +338,71 @@ int bfs(vector<vector<char>>& grid, int sx, int sy) {
     }
     return -1;
 }
+```
+
+### 网格连通块 / 岛屿计数（表格题）
+```cpp
+// 适用：岛屿数量、最大连通块面积、字符填充、封闭区域
+// 核心：遍历整张表，遇到未访问陆地就 BFS/DFS 沉没整块
+int dx[4] = {-1, 1, 0, 0};
+int dy[4] = {0, 0, -1, 1};
+
+bool inside(int x, int y, int n, int m) {
+    return x >= 0 && x < n && y >= 0 && y < m;
+}
+
+// 把从 (sx,sy) 出发的整个连通块标记掉，并返回连通块大小
+// land 是可走字符，mark 是访问标记；mark 不要和 land 相同
+int flood(vector<string>& g, int sx, int sy, char land = '1', char mark = '#') {
+    int n = g.size(), m = g[0].size();
+    if (!inside(sx, sy, n, m) || g[sx][sy] != land) return 0;
+    queue<pair<int,int>> q;
+    q.push({sx, sy});
+    g[sx][sy] = mark;
+    int area = 0;
+    while (!q.empty()) {
+        int x = q.front().first, y = q.front().second; q.pop();
+        area++;
+        for (int d = 0; d < 4; d++) {
+            int nx = x + dx[d], ny = y + dy[d];
+            if (!inside(nx, ny, n, m) || g[nx][ny] != land) continue;
+            g[nx][ny] = mark;  // 入队前标记，避免同一格重复入队
+            q.push({nx, ny});
+        }
+    }
+    return area;
+}
+
+// 岛屿数量 / 最大岛屿面积
+pair<int,int> countIslands(vector<string>& g, char land = '1') {
+    int n = g.size(), m = g[0].size();
+    int cnt = 0, maxArea = 0;
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            if (g[i][j] == land) {
+                cnt++;
+                maxArea = max(maxArea, flood(g, i, j, land));
+            }
+    return {cnt, maxArea};
+}
+
+// 封闭岛屿 / 被包围区域：先把边界连通块淹掉，再统计剩余
+int countClosedIslands(vector<string>& g, char land = '1') {
+    int n = g.size(), m = g[0].size();
+    for (int i = 0; i < n; i++) {
+        flood(g, i, 0, land);
+        flood(g, i, m - 1, land);
+    }
+    for (int j = 0; j < m; j++) {
+        flood(g, 0, j, land);
+        flood(g, n - 1, j, land);
+    }
+    return countIslands(g, land).first;
+}
+
+// 八方向连通：再加四个斜方向即可
+// int dx[8] = {-1,-1,-1,0,0,1,1,1};
+// int dy[8] = {-1,0,1,-1,1,-1,0,1};
 ```
 
 ---
@@ -410,6 +475,92 @@ for (int i = 0; i < n; i++)
         dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
 ```
 
+### 背包恰好装满（不可达初始化）
+```cpp
+// 求"恰好装满容量 C 的最大价值"：不可达状态必须标成负无穷
+// 若只是"不超过 C 的最大价值"，dp 全部初始化为 0 即可
+const int NEG = -0x3f3f3f3f;
+vector<int> dp(C + 1, NEG);
+dp[0] = 0;  // 容量 0 恰好装满，价值为 0
+for (int i = 0; i < n; i++)
+    for (int j = C; j >= w[i]; j--)
+        if (dp[j - w[i]] != NEG)
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
+// dp[C] == NEG 表示无法恰好装满
+```
+
+### 背包方案数（组合数 / 排列数）
+```cpp
+// 0/1 背包方案数：每个数只能用一次，容量倒序
+vector<ll> dp(C + 1, 0);
+dp[0] = 1;
+for (int i = 0; i < n; i++)
+    for (int j = C; j >= w[i]; j--)
+        dp[j] += dp[j - w[i]];
+
+// 完全背包组合数：{1,2} 和 {2,1} 算同一种，外层物品，内层容量正序
+vector<ll> ways(C + 1, 0);
+ways[0] = 1;
+for (int i = 0; i < n; i++)
+    for (int j = w[i]; j <= C; j++)
+        ways[j] += ways[j - w[i]];
+
+// 完全背包排列数：{1,2} 和 {2,1} 算两种，外层容量，内层物品
+vector<ll> perm(C + 1, 0);
+perm[0] = 1;
+for (int j = 1; j <= C; j++)
+    for (int i = 0; i < n; i++)
+        if (j >= w[i]) perm[j] += perm[j - w[i]];
+```
+
+### 多重背包（二进制拆分）
+```cpp
+// 每种物品最多 cnt[i] 件：拆成 1,2,4,... 若干个 0/1 物品
+vector<int> nw, nv;
+for (int i = 0; i < n; i++) {
+    int k = cnt[i], base = 1;
+    while (k > 0) {
+        int take = min(base, k);
+        nw.push_back(w[i] * take);
+        nv.push_back(v[i] * take);
+        k -= take;
+        base <<= 1;
+    }
+}
+
+vector<int> dp(C + 1, 0);
+for (int i = 0; i < (int)nw.size(); i++)
+    for (int j = C; j >= nw[i]; j--)
+        dp[j] = max(dp[j], dp[j - nw[i]] + nv[i]);
+```
+
+### 分组背包（每组最多选一个）
+```cpp
+// groups[g] 里存第 g 组的所有物品，每组最多选一个
+// pair.first = 重量，pair.second = 价值
+vector<vector<pair<int,int>>> groups;
+vector<int> dp(C + 1, 0);
+for (int g = 0; g < (int)groups.size(); g++) {
+    vector<int> old = dp;  // 必须从上一组状态转移，避免同组内选多个
+    for (int t = 0; t < (int)groups[g].size(); t++) {
+        int ww = groups[g][t].first, val = groups[g][t].second;
+        for (int j = C; j >= ww; j--)
+            dp[j] = max(dp[j], old[j - ww] + val);
+    }
+}
+```
+
+### 二维费用背包（两个容量限制）
+```cpp
+// 每个物品有两种费用 a[i], b[i]，容量分别是 A, B；每个物品只能选一次
+vector<vector<int>> dp(A + 1, vector<int>(B + 1, 0));
+for (int i = 0; i < n; i++)
+    for (int x = A; x >= a[i]; x--)
+        for (int y = B; y >= b[i]; y--)
+            dp[x][y] = max(dp[x][y], dp[x - a[i]][y - b[i]] + v[i]);
+// 两个维度都要倒序，否则同一物品会被重复选
+```
+
 ### 最长递增子序列 LIS（O(n log n)）
 ```cpp
 // tail[i] = 长度为 i+1 的递增子序列的最小末尾
@@ -479,7 +630,145 @@ ll C(int n, int m) {
 
 ---
 
-## 十、质数筛
+## 十、日期计算 & 进制转换
+
+### 日期计算（天数差 / 日期加减 / 星期）
+```cpp
+struct Date {
+    int y, m, d;
+};
+
+bool leap(int y) {
+    return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
+}
+
+int daysInMonth(int y, int m) {
+    static int md[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+    if (m == 2) return md[m] + leap(y);
+    return md[m];
+}
+
+// 统计 [1, y] 里有多少个闰年
+ll leapCount(ll y) {
+    if (y <= 0) return 0;
+    return y / 4 - y / 100 + y / 400;
+}
+
+// 转成绝对天数，约定 0001-01-01 是第 1 天
+ll toDay(Date a) {
+    ll y = a.y - 1, res = y * 365 + leapCount(y);
+    for (int m = 1; m < a.m; m++) res += daysInMonth(a.y, m);
+    return res + a.d;
+}
+
+// 绝对天数反推日期，适合日期加减
+Date fromDay(ll day) {
+    int l = 1, r = 5000000;
+    while (l < r) {
+        int mid = (l + r + 1) / 2;
+        if (toDay({mid, 1, 1}) <= day) l = mid;
+        else r = mid - 1;
+    }
+    int y = l, m = 1;
+    ll d = day - toDay({y, 1, 1}) + 1;
+    while (d > daysInMonth(y, m)) d -= daysInMonth(y, m++);
+    return {y, m, (int)d};
+}
+
+ll diffDays(Date a, Date b) {
+    return llabs(toDay(a) - toDay(b));
+}
+
+Date addDays(Date a, ll delta) {
+    ll day = toDay(a) + delta;
+    if (day < 1) day = 1;  // 若题目允许公元前日期，需要另写历法
+    return fromDay(day);
+}
+
+// 0=周日, 1=周一, ..., 6=周六；1970-01-01 是周四
+int weekday(Date a) {
+    ll delta = toDay(a) - toDay({1970, 1, 1});
+    int w = (int)((4 + delta) % 7);
+    if (w < 0) w += 7;
+    return w;
+}
+
+// 求某年某月第 k 个星期 w 的日期，不存在返回 -1
+int kthWeekday(int y, int m, int k, int w) {
+    int cnt = 0;
+    for (int d = 1; d <= daysInMonth(y, m); d++) {
+        if (weekday({y, m, d}) == w) {
+            cnt++;
+            if (cnt == k) return d;
+        }
+    }
+    return -1;
+}
+```
+
+### 进制转换（2~36 进制）
+```cpp
+const string DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+int val(char c) {
+    if ('0' <= c && c <= '9') return c - '0';
+    if ('A' <= c && c <= 'Z') return c - 'A' + 10;
+    if ('a' <= c && c <= 'z') return c - 'a' + 10;
+    return -1;
+}
+
+// 十进制转 k 进制：取余得到低位，最后 reverse
+string decToBase(ll n, int k) {
+    if (k < 2 || k > 36) return "";
+    if (n == 0) return "0";
+    bool neg = n < 0;
+    if (neg) n = -n;
+    string s;
+    while (n > 0) {
+        s += DIGITS[n % k];
+        n /= k;
+    }
+    if (neg) s += '-';
+    reverse(s.begin(), s.end());
+    return s;
+}
+
+// k 进制转十进制：从高位到低位逐位累乘
+ll baseToDec(string s, int k) {
+    if (k < 2 || k > 36) return -1;
+    int i = 0, neg = 0;
+    if (!s.empty() && s[0] == '-') neg = 1, i = 1;
+    ll x = 0;
+    for (; i < (int)s.size(); i++) {
+        int v = val(s[i]);
+        if (v < 0 || v >= k) return -1;  // 非法字符
+        x = x * k + v;
+    }
+    return neg ? -x : x;
+}
+
+// a 进制转 b 进制：中间用十进制过渡，注意题目数据太大时要改用高精度
+string convertBase(string s, int a, int b) {
+    ll x = baseToDec(s, a);
+    if (x == -1) return "";
+    return decToBase(x, b);
+}
+
+// 十六进制字符转 4 位二进制串，编码/位流题常用
+string hexToBits(string s) {
+    string bits;
+    for (char c : s) {
+        int x = val(c);
+        if (x < 0 || x >= 16) return "";
+        for (int i = 3; i >= 0; i--) bits += char('0' + ((x >> i) & 1));
+    }
+    return bits;
+}
+```
+
+---
+
+## 十一、质数筛
 
 ### 埃氏筛 O(n log log n)
 ```cpp
@@ -509,7 +798,7 @@ for (int i = 2; i < n; i++) {
 
 ---
 
-## 十一、单调栈 & 单调队列
+## 十二、单调栈 & 单调队列
 
 ### 单调栈（右侧第一个更大元素）
 ```cpp
@@ -546,7 +835,7 @@ for (int r = 0; r < n; r++) {
 
 ---
 
-## 十二、图 & 树
+## 十三、图 & 树
 
 ### 邻接表建图
 ```cpp
@@ -610,7 +899,7 @@ int lca(int u, int v) {
 
 ---
 
-## 十三、回溯（子集/组合/排列）
+## 十四、回溯（子集/组合/排列）
 
 ```cpp
 // 子集/组合（元素唯一，不可复选）
@@ -640,7 +929,7 @@ void backtrack(vector<int>& nums) {
 
 ---
 
-## 十四、位运算常用
+## 十五、位运算常用
 
 ```cpp
 n & 1              // 判断奇偶：末位为1是奇数，为0是偶数
@@ -654,13 +943,16 @@ __lg(n)            // floor(log2(n))，即最高位1的位置，n>0
 
 ---
 
-## 十五、常见坑 Checklist
+## 十六、常见坑 Checklist
 
 - [ ] `long long` 够不够？中间乘法 `(ll)a * b` 先转再乘
 - [ ] 数组开够了没？比约束大 5~10
 - [ ] 树状数组必须 1-indexed
 - [ ] 线段树数组开 4 倍
 - [ ] 0/1 背包倒序，完全背包正序
+- [ ] 背包恰好装满要用不可达初始化，不能全 0
+- [ ] 背包方案数：组合数外层物品，排列数外层容量
+- [ ] 分组背包每组最多选一个，要从上一组状态转移
 - [ ] 浮点判零用 `abs(x) < EPS`，不要 `== 0`
 - [ ] 负数取模 `(x % k + k) % k`
 - [ ] `getline` 前吃换行 `cin.ignore()`
