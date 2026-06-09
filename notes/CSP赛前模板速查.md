@@ -432,6 +432,36 @@ void dfs(int x, int y, int k) {
 
 ## 七、二分查找
 
+### 推荐：左闭右闭写法 `while(l <= r)`（逻辑对称，防死循环）
+```cpp
+// 找满足条件的最小值（左边界）
+int l = 0, r = MAX, ans = -1;
+while (l <= r) {
+    int mid = l + (r - l) / 2;  // 防溢出
+    if (check(mid)) {
+        ans = mid;              // mid 满足条件，先记录下来
+        r = mid - 1;            // 向左收缩，找有没有更小的
+    } else {
+        l = mid + 1;            // mid 不满足，去右边找
+    }
+}
+// ans 即答案（退出循环时，l 也恰好等于 ans）
+
+// 找满足条件的最大值（右边界）
+int l = 0, r = MAX, ans = -1;
+while (l <= r) {
+    int mid = l + (r - l) / 2;
+    if (check(mid)) {
+        ans = mid;              // mid 满足条件，先记录下来
+        l = mid + 1;            // 向右收缩，找有没有更大的
+    } else {
+        r = mid - 1;            // mid 不满足，去左边找
+    }
+}
+// ans 即答案（退出循环时，r 也恰好等于 ans）
+```
+
+### 对照：不完全闭区间写法 `while(l < r)`（找边界点好用，需注意死循环坑）
 ```cpp
 // 找满足条件的最小值（左边界）：check(mid)==true 时收缩右端点
 int l = 0, r = MAX;
@@ -634,81 +664,97 @@ ll C(int n, int m) {
 
 ### 日期计算（天数差 / 日期加减 / 星期）
 ```cpp
-struct Date {
+struct D {
     int y, m, d;
 };
+
+int md[] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
 
 bool leap(int y) {
     return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
 }
 
-int daysInMonth(int y, int m) {
-    static int md[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+int dim(int y, int m) {
     if (m == 2) return md[m] + leap(y);
     return md[m];
 }
 
-// 统计 [1, y] 里有多少个闰年
-ll leapCount(ll y) {
+// 统计 [1, y] 里有多少个闰年。利用前缀和思想，求 [y1, y2] 区间的闰年数即：lcnt(y2) - lcnt(y1 - 1)
+ll lcnt(ll y) {
     if (y <= 0) return 0;
-    return y / 4 - y / 100 + y / 400;
+    return y / 400 + y / 4 - y / 100;
 }
 
 // 转成绝对天数，约定 0001-01-01 是第 1 天
-ll toDay(Date a) {
-    ll y = a.y - 1, res = y * 365 + leapCount(y);
-    for (int m = 1; m < a.m; m++) res += daysInMonth(a.y, m);
+ll id(D a) {
+    ll y = a.y - 1, res = y * 365 + lcnt(y);
+    for (int m = 1; m < a.m; m++) res += dim(a.y, m);
     return res + a.d;
 }
 
 // 绝对天数反推日期，适合日期加减
-Date fromDay(ll day) {
+D date(ll day) {
     int l = 1, r = 5000000;
-    while (l < r) {
-        int mid = (l + r + 1) / 2;
-        if (toDay({mid, 1, 1}) <= day) l = mid;
-        else r = mid - 1;
+    while (l <= r) {
+        int mid = l + (r - l) / 2;
+        if (id({mid, 1, 1}) <= day) {
+            l = mid + 1;  // 满足条件，尝试找更大的年份
+        } else {
+            r = mid - 1;  // 不满足，去左边找
+        }
     }
-    int y = l, m = 1;
-    ll d = day - toDay({y, 1, 1}) + 1;
-    while (d > daysInMonth(y, m)) d -= daysInMonth(y, m++);
-    return {y, m, (int)d};
+    int y = r, m = 1;     // 退出循环时，r 就是满足条件的最大年份
+    ll d = day - id({y, 1, 1}) + 1;
+	while(d > dim(y, m)) {
+		d -= dim(y, m);
+		m++;
+	}
+	return {y, m, (int)d};
 }
 
-ll diffDays(Date a, Date b) {
-    return llabs(toDay(a) - toDay(b));
+ll diff(D a, D b) {
+    return llabs(id(a) - id(b));
 }
 
-Date addDays(Date a, ll delta) {
-    ll day = toDay(a) + delta;
+D add(D a, ll delta) {
+    ll day = id(a) + delta;
     if (day < 1) day = 1;  // 若题目允许公元前日期，需要另写历法
-    return fromDay(day);
+    return date(day);
 }
 
 // 0=周日, 1=周一, ..., 6=周六；1970-01-01 是周四
-int weekday(Date a) {
-    ll delta = toDay(a) - toDay({1970, 1, 1});
-    int w = (int)((4 + delta) % 7);
-    if (w < 0) w += 7;
-    return w;
+int wd(D a) {
+    ll delta = id(a) - id({1970, 1, 1});
+    return (int)(((4 + delta) % 7 + 7) % 7);
 }
 
 // 求某年某月第 k 个星期 w 的日期，不存在返回 -1
-int kthWeekday(int y, int m, int k, int w) {
+int kth(int y, int m, int k, int w) {
     int cnt = 0;
-    for (int d = 1; d <= daysInMonth(y, m); d++) {
-        if (weekday({y, m, d}) == w) {
+    for (int d = 1; d <= dim(y, m); d++) {
+        if (wd({y, m, d}) == w) {
             cnt++;
             if (cnt == k) return d;
         }
     }
     return -1;
 }
+
+// 字符串日期互转：输入/输出 "yyyy-mm-dd"
+D parse(string s) {
+    return {stoi(s.substr(0, 4)), stoi(s.substr(5, 2)), stoi(s.substr(8, 2))};
+}
+
+string fmt(D a) {
+    char s[15];
+    sprintf(s, "%04d-%02d-%02d", a.y, a.m, a.d);
+    return string(s);
+}
 ```
 
 ### 进制转换（2~36 进制）
 ```cpp
-const string DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const string num = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 int val(char c) {
     if ('0' <= c && c <= '9') return c - '0';
@@ -718,14 +764,14 @@ int val(char c) {
 }
 
 // 十进制转 k 进制：取余得到低位，最后 reverse
-string decToBase(ll n, int k) {
+string itos(ll n, int k) {
     if (k < 2 || k > 36) return "";
     if (n == 0) return "0";
     bool neg = n < 0;
     if (neg) n = -n;
     string s;
     while (n > 0) {
-        s += DIGITS[n % k];
+        s += num[n % k];
         n /= k;
     }
     if (neg) s += '-';
@@ -734,7 +780,7 @@ string decToBase(ll n, int k) {
 }
 
 // k 进制转十进制：从高位到低位逐位累乘
-ll baseToDec(string s, int k) {
+ll stoi(string s, int k) {
     if (k < 2 || k > 36) return -1;
     int i = 0, neg = 0;
     if (!s.empty() && s[0] == '-') neg = 1, i = 1;
@@ -748,14 +794,14 @@ ll baseToDec(string s, int k) {
 }
 
 // a 进制转 b 进制：中间用十进制过渡，注意题目数据太大时要改用高精度
-string convertBase(string s, int a, int b) {
-    ll x = baseToDec(s, a);
+string cvt(string s, int a, int b) {
+    ll x = stoi(s, a);
     if (x == -1) return "";
-    return decToBase(x, b);
+    return itos(x, b);
 }
 
 // 十六进制字符转 4 位二进制串，编码/位流题常用
-string hexToBits(string s) {
+string hex2bin(string s) {
     string bits;
     for (char c : s) {
         int x = val(c);
