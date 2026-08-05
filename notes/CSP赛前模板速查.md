@@ -291,6 +291,46 @@ vector<ll> dijkstra(vector<vector<pair<int,int>>>& g, int src) {
     }
     return dist;
 }
+
+#include<bits/stdc++.h>
+using namespace std;
+using ll = long long;
+
+const int INF = 0x3f3f3f3f;
+int n, m, s;
+vector<vector<pair<int, int>>> adj;
+
+int main() {
+	cin>>n>>m>>s;
+	adj.resize(n+1);
+	for(int i = 0; i < m; i++) {
+		int u, v, w;
+		cin>>u>>v>>w;
+		adj[u].push_back({v, w});
+	}
+
+	vector<int> dist(n+1, INF);
+	dist[s] = 0;
+	priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+	pq.push({0, s});  // 距离， 节点
+	while(!pq.empty()) {
+		int u = pq.top().second;
+		int d = pq.top().first;
+		pq.pop();
+		if(d > dist[u]) continue;  // 剪枝
+		for(auto& edge : adj[u]) {
+			int v = edge.first, w = edge.second;
+			if(dist[v] > dist[u] + w) {
+				dist[v] = dist[u] + w;
+				pq.push({dist[v], v});
+			}
+		}
+	}
+	for(int i = 1; i <= n; i++) {
+		cout<<dist[i]<<" ";
+	}
+	return 0;
+}
 ```
 
 ### Floyd（全源最短路，邻接矩阵）
@@ -420,7 +460,7 @@ void dfs(int x, int y, int k) {
     if (越界) return;
     if (k <= memo[x][y]) return;  // 剪枝：当前路径不优于历史最优，放弃
     memo[x][y] = k;               // 刷新最优状态，标记此状态已访问
-    标记/统计当前格子;
+    // 标记/统计当前格子;
     if (k > 0) {
         for (auto& dir : directions)
             dfs(x + dir.first, y + dir.second, k - 1);
@@ -497,6 +537,7 @@ for (int i = 0; i < n; i++)
 ```
 
 ### 完全背包（一维滚动数组）
+
 ```cpp
 // 每个物品可无限选 → 正序遍历容量，dp[j-w[i]] 可能已经包含了物品 i
 vector<int> dp(C + 1, 0);
@@ -591,6 +632,126 @@ for (int i = 0; i < n; i++)
 // 两个维度都要倒序，否则同一物品会被重复选
 ```
 
+### 最大子数组和（Kadane）
+```cpp
+// 特征：求连续子数组的最大和；数组可能全是负数
+// cur = 必须以 a[i] 结尾的最大子数组和
+ll cur = a[0], ans = a[0];
+for (int i = 1; i < n; i++) {
+    cur = max((ll)a[i], cur + a[i]);
+    ans = max(ans, cur);
+}
+// 时间 O(n)，额外空间 O(1)
+// 易错：不能把 ans 初始化为 0，否则全负数组会错误返回 0
+```
+
+### 乘积最大子数组
+```cpp
+// 负数会让最大值、最小值交换角色，因此同时维护 mx 和 mn
+ll mx = a[0], mn = a[0], ans = a[0];
+for (int i = 1; i < n; i++) {
+    if (a[i] < 0) swap(mx, mn);
+    mx = max((ll)a[i], mx * a[i]);
+    mn = min((ll)a[i], mn * a[i]);
+    ans = max(ans, mx);
+}
+// 时间 O(n)，额外空间 O(1)
+// 易错：0 会自然让状态重新开始；乘积可能溢出 int，优先使用 long long
+```
+
+### 打家劫舍（相邻元素不能同时选）
+```cpp
+// prev1 = 前 i-1 个位置的最优值，prev2 = 前 i-2 个位置的最优值
+ll prev2 = 0, prev1 = 0;
+for (int x : nums) {
+    ll cur = max(prev1, prev2 + x);  // 不选当前 / 选择当前
+    prev2 = prev1;
+    prev1 = cur;
+}
+ll ans = prev1;
+// 时间 O(n)，额外空间 O(1)
+// 环形版本：分别计算 [0,n-2] 和 [1,n-1]，取较大值；n=1 要单独处理
+```
+
+### 网格路径 DP（不同路径 / 最小路径和）
+```cpp
+// 不同路径（含障碍）：obstacle[i][j]=1 表示不能经过
+// ways[j] 更新前表示上方方案数，更新后表示当前格方案数
+vector<ll> ways(m, 0);
+ways[0] = (obstacle[0][0] == 0);
+for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+        if (obstacle[i][j] == 1) ways[j] = 0;  // 障碍点必须清零
+        else if (j > 0) ways[j] += ways[j - 1];
+    }
+}
+ll pathCount = ways[m - 1];
+
+// 最小路径和：只能向右或向下，cost[j] 更新前是上方，cost[j-1] 是左方
+const ll LINF = (1LL << 62);
+vector<ll> cost(m, LINF);
+for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+        if (i == 0 && j == 0) cost[j] = grid[i][j];
+        else {
+            ll up = cost[j];
+            ll left = (j > 0 ? cost[j - 1] : LINF);
+            cost[j] = min(up, left) + grid[i][j];
+        }
+    }
+}
+ll minCost = cost[m - 1];
+// 两种写法都是时间 O(nm)，额外空间 O(m)
+```
+
+### 零钱兑换（完全背包最小值）
+```cpp
+// dp[j] = 凑出金额 j 所需的最少硬币数，每枚硬币可以重复使用
+vector<int> dp(amount + 1, amount + 1);
+dp[0] = 0;
+for (int coin : coins)
+    for (int j = coin; j <= amount; j++)  // 正序：允许重复使用当前硬币
+        dp[j] = min(dp[j], dp[j - coin] + 1);
+int ans = (dp[amount] == amount + 1 ? -1 : dp[amount]);
+// 时间 O(amount * coins.size())，空间 O(amount)
+// 易错：不能用 INT_MAX 初始化，否则 dp[j-coin]+1 可能溢出
+```
+
+### 单词拆分
+```cpp
+// dp[i] = 前 i 个字符 s[0..i-1] 能否由字典中的单词拼出
+unordered_set<string> dict(words.begin(), words.end());
+vector<char> dp(s.size() + 1, 0);
+dp[0] = 1;  // 空串可以被成功拼出
+for (int i = 1; i <= (int)s.size(); i++) {
+    for (int j = 0; j < i; j++) {
+        if (dp[j] && dict.count(s.substr(j, i - j))) {
+            dp[i] = 1;
+            break;
+        }
+    }
+}
+bool ok = dp[s.size()];
+// C++ substr 会复制字符串，朴素复杂度 O(n^3)，空间 O(n + 字典大小)
+// n 较大时可记录字典最大单词长度，限制 j 的枚举范围
+```
+
+### 最长公共子序列 LCS
+```cpp
+// dp[i][j] = a 的前 i 个字符与 b 的前 j 个字符的 LCS 长度
+int n = a.size(), m = b.size();
+vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
+for (int i = 1; i <= n; i++) {
+    for (int j = 1; j <= m; j++) {
+        if (a[i - 1] == b[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;
+        else dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+    }
+}
+int lcs = dp[n][m];
+// 时间 O(nm)，空间 O(nm)；只求长度时可压缩为一维数组
+// 子序列不要求连续；若要求连续，应在字符不同时把状态置 0
+```
+
 ### 最长递增子序列 LIS（O(n log n)）
 ```cpp
 // tail[i] = 长度为 i+1 的递增子序列的最小末尾
@@ -622,7 +783,385 @@ for (int i = 1; i <= m; i++)
 
 ---
 
-## 九、快速幂 & 组合数
+## 九、Hot 100 高频模型
+
+### 三数之和（排序 + 双指针）
+```cpp
+// 固定 a[i] 后，在右侧区间用双指针寻找另外两个数
+sort(a.begin(), a.end());
+vector<vector<int>> ans;
+for (int i = 0; i < (int)a.size(); i++) {
+    if (i > 0 && a[i] == a[i - 1]) continue;  // 固定点去重
+    if (a[i] > 0) break;  // 目标为 0 时，后面不可能再凑出 0
+    int left = i + 1, right = (int)a.size() - 1;
+    while (left < right) {
+        ll sum = (ll)a[i] + a[left] + a[right];
+        if (sum < 0) left++;
+        else if (sum > 0) right--;
+        else {
+            ans.push_back({a[i], a[left], a[right]});
+            int lv = a[left], rv = a[right];
+            while (left < right && a[left] == lv) left++;
+            while (left < right && a[right] == rv) right--;
+        }
+    }
+}
+// 时间 O(n^2)，排序外额外空间 O(1)（不计答案）
+// 易错：固定点和左右指针都要去重；三数求和先转 long long 防溢出
+```
+
+### 滑动窗口（固定窗口 / 可变窗口）
+```cpp
+// 固定窗口：寻找 s 中所有与 p 互为字母异位词的起点（仅含小写字母）
+vector<int> need(26, 0), window(26, 0), ans;
+for (char c : p) need[c - 'a']++;
+int k = p.size();
+for (int right = 0; right < (int)s.size(); right++) {
+    window[s[right] - 'a']++;                       // 新元素进入窗口
+    if (right >= k) window[s[right - k] - 'a']--; // 旧元素移出窗口
+    if (right >= k - 1 && window == need)
+        ans.push_back(right - k + 1);
+}
+// 时间 O(26n)，空间 O(26)；固定窗口顺序：加入 → 移出 → 记录答案
+
+// 可变窗口：最长无重复字符子串
+vector<int> last(256, -1);  // last[c] = 字符 c 上次出现的位置
+int left = 0, best = 0;
+for (int right = 0; right < (int)s.size(); right++) {
+    unsigned char c = s[right];
+    left = max(left, last[c] + 1);  // 左边界只能向右，不能倒退
+    last[c] = right;
+    best = max(best, right - left + 1);
+}
+// 时间 O(n)，空间 O(字符集大小)
+```
+
+### 合并区间
+```cpp
+// intervals[i] = {left, right}；先按左端点排序
+sort(intervals.begin(), intervals.end());
+vector<vector<int>> merged;
+for (auto& cur : intervals) {
+    if (merged.empty() || cur[0] > merged.back()[1]) {
+        merged.push_back(cur);  // 与上一个区间没有交集
+    } else {
+        merged.back()[1] = max(merged.back()[1], cur[1]);
+    }
+}
+// 时间 O(n log n)，额外空间 O(n)（存答案）
+// 易错：cur[0] == merged.back()[1] 时仍有交集，不能新开区间
+```
+
+### 拓扑排序（课程依赖 / 判断有向图是否有环）
+```cpp
+vector<vector<int>> g(n);
+vector<int> indeg(n, 0);
+for (auto& e : edges) {
+    int u = e[0], v = e[1];  // 边 u -> v：必须先完成 u
+    g[u].push_back(v);
+    indeg[v]++;
+}
+
+queue<int> q;
+for (int i = 0; i < n; i++)
+    if (indeg[i] == 0) q.push(i);
+
+vector<int> order;
+while (!q.empty()) {
+    int u = q.front(); q.pop();
+    order.push_back(u);
+    for (int v : g[u])
+        if (--indeg[v] == 0) q.push(v);
+}
+bool hasCycle = ((int)order.size() != n);
+// 时间 O(n+m)，空间 O(n+m)
+// 最终处理节点数不足 n，说明剩余节点都在环中或依赖环
+```
+
+### Top K 高频元素（小根堆）
+```cpp
+unordered_map<int, int> freq;
+for (int x : nums) freq[x]++;
+
+// 堆中只保留频率最高的 k 个元素，堆顶是当前最低频率
+priority_queue<pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>>> pq;
+for (auto& [x, cnt] : freq) {
+    pq.push({cnt, x});
+    if ((int)pq.size() > k) pq.pop();
+}
+
+vector<int> ans;
+while (!pq.empty()) {
+    ans.push_back(pq.top().second);
+    pq.pop();
+}
+// 设不同元素数为 u：期望时间 O(n + u log k)，空间 O(u+k)
+// 输出顺序通常不限；若要求按频率降序，可在最后 reverse(ans.begin(), ans.end())
+```
+
+---
+
+## 十、链表与二叉树（Hot 100 补充）
+
+> LeetCode 通常已经给出节点定义；ACM 模式若需要自行建链表/树，可直接使用下面的结构体。
+
+### 链表基础（反转 / 合并两个有序链表）
+```cpp
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode(int x = 0, ListNode* next = nullptr) : val(x), next(next) {}
+};
+
+// 反转链表：每次修改 cur->next 前，必须先保存 nxt
+ListNode* reverseList(ListNode* head) {
+    ListNode* pre = nullptr;
+    ListNode* cur = head;
+    while (cur != nullptr) {
+        ListNode* nxt = cur->next;
+        cur->next = pre;
+        pre = cur;
+        cur = nxt;
+    }
+    return pre;
+}
+
+// 合并两个升序链表：dummy 避免单独处理头节点
+ListNode* mergeTwoLists(ListNode* a, ListNode* b) {
+    ListNode dummy(-1);
+    ListNode* tail = &dummy;
+    while (a != nullptr && b != nullptr) {
+        if (a->val <= b->val) {
+            tail->next = a;
+            a = a->next;
+        } else {
+            tail->next = b;
+            b = b->next;
+        }
+        tail = tail->next;
+    }
+    tail->next = (a != nullptr ? a : b);
+    return dummy.next;
+}
+// 两种操作都是时间 O(n)，额外空间 O(1)
+```
+
+### 链表快慢指针（环入口 / 删除倒数第 n 个 / 回文）
+```cpp
+// 判断环并返回环入口；无环返回 nullptr
+ListNode* detectCycle(ListNode* head) {
+    ListNode* slow = head;
+    ListNode* fast = head;
+    while (fast != nullptr && fast->next != nullptr) {
+        slow = slow->next;
+        fast = fast->next->next;
+        if (slow == fast) {
+            slow = head;
+            while (slow != fast) {
+                slow = slow->next;
+                fast = fast->next;
+            }
+            return slow;
+        }
+    }
+    return nullptr;
+}
+
+// 删除倒数第 n 个节点：dummy 统一处理删除头节点的情况
+ListNode* removeNthFromEnd(ListNode* head, int n) {
+    ListNode dummy(-1, head);
+    ListNode* fast = &dummy;
+    ListNode* slow = &dummy;
+    for (int i = 0; i < n; i++) fast = fast->next;
+    while (fast->next != nullptr) {
+        fast = fast->next;
+        slow = slow->next;
+    }
+    slow->next = slow->next->next;
+    return dummy.next;
+}
+
+// 回文链表：找中点 → 反转后半段 → 比较 → 恢复链表
+bool isPalindrome(ListNode* head) {
+    if (head == nullptr || head->next == nullptr) return true;
+    ListNode* slow = head;
+    ListNode* fast = head;
+    while (fast->next != nullptr && fast->next->next != nullptr) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    ListNode* second = reverseList(slow->next);
+    ListNode* p1 = head;
+    ListNode* p2 = second;
+    bool ok = true;
+    while (p2 != nullptr) {
+        if (p1->val != p2->val) {
+            ok = false;
+            break;
+        }
+        p1 = p1->next;
+        p2 = p2->next;
+    }
+    slow->next = reverseList(second);  // 恢复原链表
+    return ok;
+}
+// 时间 O(n)，额外空间 O(1)
+// 易错：快指针走两步前必须检查 fast 和 fast->next
+```
+
+### 二叉树 DFS（三种递归位置）
+```cpp
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x = 0, TreeNode* left = nullptr, TreeNode* right = nullptr)
+        : val(x), left(left), right(right) {}
+};
+
+vector<int> preorder, inorder, postorder;
+void traverse(TreeNode* root) {
+    if (root == nullptr) return;
+    preorder.push_back(root->val);   // 前序位置：进入节点
+    traverse(root->left);
+    inorder.push_back(root->val);    // 中序位置：左子树处理完
+    traverse(root->right);
+    postorder.push_back(root->val);  // 后序位置：左右子树都处理完
+}
+// 时间 O(n)，递归栈 O(h)；h 是树高，链状树最坏 O(n)
+// 多组数据或重复调用前要清空三个结果数组
+```
+
+### 二叉树层序遍历（BFS）
+```cpp
+vector<vector<int>> levelOrder(TreeNode* root) {
+    vector<vector<int>> ans;
+    if (root == nullptr) return ans;
+    queue<TreeNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        int size = q.size();  // 当前层节点数，必须在进入 for 前固定
+        vector<int> level;
+        for (int i = 0; i < size; i++) {
+            TreeNode* cur = q.front(); q.pop();
+            level.push_back(cur->val);
+            if (cur->left != nullptr) q.push(cur->left);
+            if (cur->right != nullptr) q.push(cur->right);
+        }
+        ans.push_back(level);
+    }
+    return ans;
+}
+// 时间 O(n)，队列空间 O(n)
+// 变式：锯齿层序在奇数层 reverse(level.begin(), level.end())
+```
+
+### 二叉树深度与直径（后序分治）
+```cpp
+int maxDepth(TreeNode* root) {
+    if (root == nullptr) return 0;
+    return max(maxDepth(root->left), maxDepth(root->right)) + 1;
+}
+
+// depth 返回当前子树深度，并在后序位置更新直径
+int depth(TreeNode* root, int& diameter) {
+    if (root == nullptr) return 0;
+    int left = depth(root->left, diameter);
+    int right = depth(root->right, diameter);
+    diameter = max(diameter, left + right);
+    return max(left, right) + 1;
+}
+
+int diameterOfBinaryTree(TreeNode* root) {
+    int diameter = 0;
+    depth(root, diameter);
+    return diameter;
+}
+// 时间 O(n)，递归栈 O(h)
+// 易错：这里直径按“边数”计算，所以是 left+right，不再加 1
+```
+
+### 二叉搜索树 BST（验证 / 第 k 小）
+```cpp
+// BST 要求左子树所有值 < 根 < 右子树所有值，不能只比较直接孩子
+bool validBST(TreeNode* root, ll lower, ll upper) {
+    if (root == nullptr) return true;
+    if (root->val <= lower || root->val >= upper) return false;
+    return validBST(root->left, lower, root->val)
+        && validBST(root->right, root->val, upper);
+}
+bool isValidBST(TreeNode* root) {
+    return validBST(root, LLONG_MIN, LLONG_MAX);
+}
+
+// BST 中序遍历天然递增，第 k 次弹出的节点就是第 k 小
+int kthSmallest(TreeNode* root, int k) {
+    stack<TreeNode*> st;
+    while (root != nullptr || !st.empty()) {
+        while (root != nullptr) {
+            st.push(root);
+            root = root->left;
+        }
+        root = st.top(); st.pop();
+        if (--k == 0) return root->val;
+        root = root->right;
+    }
+    return -1;  // k 非法；题目通常保证 k 有效
+}
+// 时间 O(n)，栈空间 O(h)；边界必须用 long long，且比较是严格不等号
+```
+
+### 二叉树最近公共祖先 LCA
+```cpp
+// 普通二叉树：若 p、q 分别出现在左右子树，当前 root 就是最近公共祖先
+TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+    if (root == nullptr || root == p || root == q) return root;
+    TreeNode* left = lowestCommonAncestor(root->left, p, q);
+    TreeNode* right = lowestCommonAncestor(root->right, p, q);
+    if (left != nullptr && right != nullptr) return root;
+    return (left != nullptr ? left : right);
+}
+// 时间 O(n)，递归栈 O(h)；模板默认 p、q 都存在于树中
+
+// BST 版本可利用大小关系：p、q 都小就向左，都大就向右，否则当前节点即答案
+TreeNode* lowestCommonAncestorBST(TreeNode* root, TreeNode* p, TreeNode* q) {
+    while (root != nullptr) {
+        if (p->val < root->val && q->val < root->val) root = root->left;
+        else if (p->val > root->val && q->val > root->val) root = root->right;
+        else return root;
+    }
+    return nullptr;
+}
+```
+
+### 前序与中序重建二叉树
+```cpp
+unordered_map<int, int> inPos;  // 节点值 -> 中序下标
+int preIndex;
+
+TreeNode* build(vector<int>& preorder, int inLeft, int inRight) {
+    if (inLeft > inRight) return nullptr;
+    int rootVal = preorder[preIndex++];
+    int mid = inPos[rootVal];
+    TreeNode* root = new TreeNode(rootVal);
+    root->left = build(preorder, inLeft, mid - 1);
+    root->right = build(preorder, mid + 1, inRight);
+    return root;
+}
+
+TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+    inPos.clear();
+    preIndex = 0;
+    for (int i = 0; i < (int)inorder.size(); i++) inPos[inorder[i]] = i;
+    return build(preorder, 0, (int)inorder.size() - 1);
+}
+// 时间 O(n)，空间 O(n)；前提是节点值互不相同
+// 前序第一个是根，中序根左侧属于左子树；必须先递归构造左子树
+```
+
+---
+
+## 十一、快速幂 & 组合数
 
 ```cpp
 const int MOD = 1e9 + 7;
@@ -660,7 +1199,7 @@ ll C(int n, int m) {
 
 ---
 
-## 十、日期计算 & 进制转换
+## 十二、日期计算 & 进制转换
 
 ### 日期计算（天数差 / 日期加减 / 星期）
 ```cpp
@@ -814,7 +1353,7 @@ string hex2bin(string s) {
 
 ---
 
-## 十一、质数筛
+## 十三、质数筛
 
 ### 埃氏筛 O(n log log n)
 ```cpp
@@ -844,7 +1383,7 @@ for (int i = 2; i < n; i++) {
 
 ---
 
-## 十二、单调栈 & 单调队列
+## 十四、单调栈 & 单调队列
 
 ### 单调栈（右侧第一个更大元素）
 ```cpp
@@ -881,7 +1420,7 @@ for (int r = 0; r < n; r++) {
 
 ---
 
-## 十三、图 & 树
+## 十五、图 & 树
 
 ### 邻接表建图
 ```cpp
@@ -945,7 +1484,7 @@ int lca(int u, int v) {
 
 ---
 
-## 十四、回溯（子集/组合/排列）
+## 十六、回溯（子集/组合/排列）
 
 ```cpp
 // 子集/组合（元素唯一，不可复选）
@@ -975,7 +1514,7 @@ void backtrack(vector<int>& nums) {
 
 ---
 
-## 十五、位运算常用
+## 十七、位运算常用
 
 ```cpp
 n & 1              // 判断奇偶：末位为1是奇数，为0是偶数
@@ -989,7 +1528,7 @@ __lg(n)            // floor(log2(n))，即最高位1的位置，n>0
 
 ---
 
-## 十六、常见坑 Checklist
+## 十八、常见坑 Checklist
 
 - [ ] `long long` 够不够？中间乘法 `(ll)a * b` 先转再乘
 - [ ] 数组开够了没？比约束大 5~10
@@ -1006,6 +1545,18 @@ __lg(n)            // floor(log2(n))，即最高位1的位置，n>0
 - [ ] 边界：n=0、n=1、空串、全相同
 - [ ] 排序比较器必须严格弱序（`<` 不是 `<=`）
 - [ ] 图题：有向/无向？重边/自环？
+- [ ] 最大子数组和初始化为 `a[0]`，不能初始化为 0（全负数组）
+- [ ] 乘积最大子数组同时维护最大值和最小值，遇负数先交换
+- [ ] 网格滚动 DP 中 `dp[j]` 是上方，`dp[j-1]` 是左方
+- [ ] 三数之和排序后，固定点与左右指针都要去重
+- [ ] 拓扑排序最终处理节点数不足 `n`，说明存在环
+- [ ] 滑动窗口明确何时扩张、何时收缩、何时记录答案
+- [ ] 链表修改 `next` 前先保存后继节点，删除头节点优先使用 dummy
+- [ ] 快指针走两步前检查 `fast != nullptr && fast->next != nullptr`
+- [ ] 二叉树递归先写 `root == nullptr`，多组数据时重置全局答案
+- [ ] 二叉树直径通常按边数计算：`leftDepth + rightDepth`
+- [ ] 验证 BST 使用 long long 上下界和严格不等号，不能只比较直接孩子
+- [ ] 前序+中序重建要求节点值唯一，并且先构造左子树再构造右子树
 - [ ] 多组数据重置数组/变量
 - [ ] `"\n"` 不用 `endl`
 - [ ] BFS/DFS 方向数组正确

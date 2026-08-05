@@ -222,6 +222,7 @@ vector<vector<int>> mp(MAXN); // 这是嵌套向量，纯正二维动态数组
 ```
 
 ### 1. 访问
+
 ```cpp
 a[i]                  // 下标访问
 a.front() / a.back()  // 首尾元素
