@@ -19,8 +19,20 @@
  */
 class Solution {
 public:
+    int sum = 0;
+
+    void traverse(TreeNode* root) {
+        if(root == nullptr) return ;
+        if(root->left != nullptr && root->left->left == nullptr && root->left->right == nullptr) {
+            sum += root->left->val;
+        }
+        traverse(root->left);
+        traverse(root->right);
+    }
+
     int sumOfLeftLeaves(TreeNode* root) {
-        
+        traverse(root);
+        return sum;
     }
 };
 // @lc code=end
